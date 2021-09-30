@@ -69,10 +69,8 @@ class MySource(Source):
         isbn = identifiers.get('isbn', None)
 
         if idval: d['id'] = idval
-        # Special Arxiv case
         elif _is_arxiv_id(title):
-            d['id'] = title
-            # d['id'] = title.rsplit('_')[0] # eliminating all possible suffixes
+            d['id'] = title.split('_', 1)[0]
         if isbn: d['isbn'] = isbn
         if title: d['title'] = title
         if authors: d['authors'] = authors
