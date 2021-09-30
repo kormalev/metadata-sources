@@ -55,6 +55,13 @@ class MySource(Source):
     def identify(self, log, result_queue, abort, title=None, authors=None,
               identifiers={}, timeout=30):
 
+        def _is_arxiv_id(s):
+            # Identifiers for arXiv articles have the form
+            # YYMM.NNNNN, e.g. 1507.00123,
+            # YYMM.NNNN, e.g. 0704.0001,
+            # or arch-ive/YYMMNNN for older articles, e.g. hep-th/9901001.
+            return bool(s and re.match(r"\d{4}\.\d{4,5}|[a-z]+-[a-z]+/\d{7}", s))
+
         md = self.worker_class(self.browser, timeout)
 
         d = {}
@@ -62,6 +69,10 @@ class MySource(Source):
         isbn = identifiers.get('isbn', None)
 
         if idval: d['id'] = idval
+        # Special Arxiv case
+        elif _is_arxiv_id(title):
+            d['id'] = title
+            # d['id'] = title.rsplit('_')[0] # eliminating all possible suffixes
         if isbn: d['isbn'] = isbn
         if title: d['title'] = title
         if authors: d['authors'] = authors
@@ -88,10 +99,10 @@ class MySource(Source):
     def identify_results_keygen(self, title=None, authors=None, identifiers={}):
         """ Returns a key to sort search results. Lesser value means more relevance."""
 
-        query = dict([('title', title), ('authors', authors)] + identifiers.items())
+        query = dict([('title', title), ('authors', authors)] + list(identifiers.items()))
 
         def mi_distance(mi):
-            mifields = dict([('title', mi.title), ('authors', mi.authors)] + mi.identifiers.items())
+            mifields = dict([('title', mi.title), ('authors', mi.authors)] + list(mi.identifiers.items()))
             return metadata_distance(query, mifields, idkey = self.idkey)
 
         return mi_distance
